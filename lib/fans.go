@@ -64,10 +64,10 @@ func GetFansAndCheck(page int) {
 			}
 		}
 	}
-	if len(fans.Data.List) != 0 {
+	if page != 5 {
 		time.Sleep(time.Duration(config.GConfig.TimeDelay) * time.Second)
 		GetFansAndCheck(page + 1)
 	} else {
-		logrus.Info("check fans list page " + strconv.Itoa(page) + " complete")
+		logrus.Info("check fans list complete")
 	}
 }

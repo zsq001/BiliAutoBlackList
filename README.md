@@ -4,13 +4,17 @@ BiliAutoBlacklist is used for automatically blocking users on Bilibili whose use
 
 ## Usage 
 
-Download binary from releases and run it.
+Download binary from releases and run.
+
+Due to the limitation of Bilibili API, the program can only detect latest 50 * 5 fans.
 
 Make sure to keep it running in the background. Using `screen` or something.
 
 ## Configuration
 
-rename config_example.yaml to config.yaml and edit.
+When first run, the program will generate a config_example.yaml file.
+
+Rename config_example.yaml to config.yaml and edit.
 
 ```yaml
 cookie: "your_cookie_here" # go to browser -> f12 -> network, open a request to "api.bilibili.com"

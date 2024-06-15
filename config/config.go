@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 )
 
@@ -18,14 +17,32 @@ type Config struct {
 var GConfig Config
 
 func InitConfig() {
+
+	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
+		defaultConfig := `cookie: "your_cookie_here"
+targetUID: "your_uid_here"
+timeDelay: 10
+cron: "0 0 0/12 * * *"
+BlackListWord:
+  - "word1"
+  - "word2"
+  - "word3"
+`
+		err = os.WriteFile("config_example.yaml", []byte(defaultConfig), 0644)
+		if err != nil {
+			logrus.Panicf("Failed to write default config file: %v", err)
+		}
+		logrus.Panic("config file not found, please create config.yaml based on config_example.yaml")
+	}
+
 	configFile, err := os.ReadFile("config.yaml")
 	if err != nil {
-		log.Panicf("Failed to read config file: %v", err)
+		logrus.Panicf("Failed to read config file: %v", err)
 	}
 
 	err = yaml.Unmarshal(configFile, &GConfig)
 	if err != nil {
-		log.Panicf("Failed to unmarshal config file: %v", err)
+		logrus.Panicf("Failed to unmarshal config file: %v", err)
 	}
 
 	if GConfig.Cron == "" {
