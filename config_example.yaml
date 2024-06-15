@@ -1,0 +1,8 @@
+cookie: "your_cookie_here"
+targetUID: "your_uid_here"
+timeDelay: 10
+cron: "0 0 0/12 * * *"
+BlackListWord:
+  - "word1"
+  - "word2"
+  - "word3"
