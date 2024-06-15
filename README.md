@@ -17,7 +17,7 @@ cookie: "your_cookie_here" # go to browser -> f12 -> network, open a request to 
                            # copy all cookie to here
 targetUID: "your_uid_here" # your uid, space.bilibili.com/<uid>
 timeDelay: 10             # delay between each request, suggest more than 10
-cron: "0 0 0/12 * * *"    # optional 
+cron: "0 0 0/12 * * *"    # optional, no less than 10 minutes
 BlackListWord:            # user with these words in username will be blocked
   - "word1"
   - "word2"

@@ -18,9 +18,9 @@ jobs:
         os: [ubuntu-20.04, windows-latest]
         include:
           - os: ubuntu-20.04
-            build-name: linux
+            bin-name: biliAutoBlackList-linux-amd64
           - os: windows-latest
-            build-name: windows
+            bin-name: biliAutoBlackList-windows-amd64.exe
 
     steps:
       - name: Checkout
@@ -34,16 +34,11 @@ jobs:
       - name: Install dependencies
         run: |
           go get .
-      - name: Build darwin
-        if: matrix.os == 'windows-latest'
+      - name: Build
         run: |
-          go build -o biliAutoBlackList-${{ matrix.build-name }}-amd64
-      - name: Build linux
-        if: matrix.os == 'ubuntu-20.04'
-        run: |
-          go build -o biliAutoBlackList-${{ matrix.build-name }}-amd64
+          go build -o ${{ matrix.bin-name }}
       - uses: actions/upload-artifact@v4.3.3
         with:
-          name: biliAutoBlackList-${{ matrix.build-name }}-amd64
-          path: biliAutoBlackList-${{ matrix.build-name }}-amd64
+          name: ${{ matrix.bin-name }}
+          path: ${{ matrix.bin-name }}
 
