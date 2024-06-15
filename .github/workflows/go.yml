@@ -11,7 +11,17 @@ on:
 
 jobs:
   artifact-build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, windows-latest]
+        include:
+          - os: ubuntu-20.04
+            build-name: linux
+          - os: windows-latest
+            build-name: windows
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,9 +34,16 @@ jobs:
       - name: Install dependencies
         run: |
           go get .
-      - name: Build linux
+      - name: Build darwin
+        if: matrix.os == 'windows-latest'
         run: |
-          go build -o biliAutoBlackList-linux-amd64
+          go build -o biliAutoBlackList-${{ matrix.build-name }}-amd64
+      - name: Build linux
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          go build -o biliAutoBlackList-${{ matrix.build-name }}-amd64
       - uses: actions/upload-artifact@v4.3.3
         with:
-          path: biliAutoBlackList-linux-amd64
+          name: biliAutoBlackList-${{ matrix.build-name }}-amd64
+          path: biliAutoBlackList-${{ matrix.build-name }}-amd64
+
