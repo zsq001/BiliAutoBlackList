@@ -1,12 +1,16 @@
-package lib
+package fans
 
 import (
 	"BiliAutoBlackList/config"
+	"BiliAutoBlackList/feishu"
+	"BiliAutoBlackList/gpt"
+	"BiliAutoBlackList/lib"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Fans struct {
@@ -47,9 +51,16 @@ type Fans struct {
 
 func GetFansAndCheck(page int) {
 	logrus.Info("start check fans list page " + strconv.Itoa(page))
-	pageSize := 50
+
+	pageSize := func() int {
+		if config.GConfig.Mode == "basic" {
+			return 50
+		}
+		return 10
+	}()
+
 	url := "https://api.bilibili.com/x/relation/fans?vmid=" + config.GConfig.TargetUID + "&pn=" + strconv.Itoa(page) + "&ps=" + strconv.Itoa(pageSize)
-	bodyText := Request("GET", url, "")
+	bodyText := lib.Request("GET", url, "")
 	var fans Fans
 	err := json.Unmarshal([]byte(bodyText), &fans)
 	if err != nil {
@@ -58,9 +69,15 @@ func GetFansAndCheck(page int) {
 	for _, v := range fans.Data.List {
 		if v.Uname != "" {
 			logrus.Info("check user: ", v.Uname)
-			if IsInBlackList(v.Uname) {
-				logrus.Info("add user: ", v.Uname)
-				AddBlackList(v.Mid)
+			if config.GConfig.Mode == "basic" && lib.IsInBlackList(v.Uname) {
+				logrus.Info("[basic] add user: ", v.Uname)
+				lib.AddBlackList(v.Mid)
+			} else if config.GConfig.Mode == "gpt" && gpt.JudgeResult(v.Uname, v.Sign) {
+				logrus.Info("[gpt] push user: ", v.Uname)
+				feishu.SendQueryCard(v.Uname, v.Sign, v.Mid)
+			} else if config.GConfig.Mode == "gpt-only" && gpt.JudgeResult(v.Uname, v.Sign) {
+				logrus.Info("[gpt-only] add user: ", v.Uname)
+				lib.AddBlackList(v.Mid)
 			}
 		}
 	}
