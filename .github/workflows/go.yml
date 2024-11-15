@@ -19,8 +19,10 @@ jobs:
         include:
           - os: ubuntu-20.04
             bin-name: biliAutoBlackList-linux-amd64
+            command: CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' -o biliAutoBlackList-linux-amd64
           - os: windows-latest
             bin-name: biliAutoBlackList-windows-amd64.exe
+            command: set CGO_ENABLED=0 && go build -a -ldflags '-extldflags "-static"' -o biliAutoBlackList-windows-amd64.exe
 
     steps:
       - name: Checkout
@@ -36,7 +38,7 @@ jobs:
           go get .
       - name: Build
         run: |
-          CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' -o ${{ matrix.bin-name }}
+          ${{ matrix.command }}
       - uses: actions/upload-artifact@v4.3.3
         with:
           name: ${{ matrix.bin-name }}
