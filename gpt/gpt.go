@@ -23,7 +23,7 @@ func InitGPTClient() {
 	var err error
 	_, err = os.Stat("prompt")
 	if os.IsNotExist(err) {
-		defaultPrompt := "你需要判断一个用户是否是可疑账号。如果认为不是则返回false，否则返回true。"
+		defaultPrompt := "你需要判断一个用户是否是可疑账号。如果认为不是则只打印false，否则只打印true，不要作任何解释，说明，也不要输出其他内容，只输出true或者false。"
 		err = ioutil.WriteFile("prompt.example", []byte(defaultPrompt), 0644)
 		logrus.Fatalf("prompt file not found")
 	}

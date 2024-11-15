@@ -52,12 +52,7 @@ type Fans struct {
 func GetFansAndCheck(page int) {
 	logrus.Info("start check fans list page " + strconv.Itoa(page))
 
-	pageSize := func() int {
-		if config.GConfig.Mode == "basic" {
-			return 50
-		}
-		return 10
-	}()
+	pageSize := 10
 
 	url := "https://api.bilibili.com/x/relation/fans?vmid=" + config.GConfig.TargetUID + "&pn=" + strconv.Itoa(page) + "&ps=" + strconv.Itoa(pageSize)
 	bodyText := lib.Request("GET", url, "")
@@ -67,7 +62,8 @@ func GetFansAndCheck(page int) {
 		log.Fatal(err)
 	}
 	for _, v := range fans.Data.List {
-		if v.Uname != "" {
+		logrus.Debug(feishu.IsInExceptList(v.Mid))
+		if v.Uname != "" && v.Vip.VipStatus == 0 && !feishu.IsInExceptList(v.Mid) {
 			logrus.Info("check user: ", v.Uname)
 			if config.GConfig.Mode == "basic" && lib.IsInBlackList(v.Uname) {
 				logrus.Info("[basic] add user: ", v.Uname)
@@ -81,7 +77,7 @@ func GetFansAndCheck(page int) {
 			}
 		}
 	}
-	if page != 5 {
+	if page <= config.GConfig.FansCheckPerDay/pageSize {
 		time.Sleep(time.Duration(config.GConfig.TimeDelay) * time.Second)
 		GetFansAndCheck(page + 1)
 	} else {

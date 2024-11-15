@@ -36,7 +36,7 @@ jobs:
           go get .
       - name: Build
         run: |
-          go build -o ${{ matrix.bin-name }}
+          CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' -o ${{ matrix.bin-name }}
       - uses: actions/upload-artifact@v4.3.3
         with:
           name: ${{ matrix.bin-name }}

@@ -5,7 +5,6 @@ import (
 	"BiliAutoBlackList/lib"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -29,10 +28,8 @@ var userOpenId string
 
 var client *lark.Client
 
-// save messageid and uid and username for rej&pass card
+// messageId2Uid save messageid and uid and username for rej&pass card
 var messageId2Uid map[string]Pair
-
-var ExceptList map[int]bool
 
 type RecallResponse struct {
 	OpenID        string `json:"open_id"`
@@ -49,16 +46,19 @@ type RecallResponse struct {
 	} `json:"action"`
 }
 
+type Preset struct {
+	Challenge string `json:"challenge"`
+	Token     string `json:"token"`
+	Type      string `json:"type"`
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(messageId2Uid)
-	// 确保请求方法是 POST
 	if r.Method != http.MethodPost {
 		logrus.Errorf("Method not allowed: %s", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// 读取请求体
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logrus.Errorf("Failed to read request body: %v", err)
@@ -67,12 +67,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// 解析 JSON 数据
 	var data RecallResponse
-	logrus.Info("body: ", string(body))
+	logrus.Debug("body: ", string(body))
 	err = json.Unmarshal(body, &data)
-	//logrus.Info(data)
-	if err != nil {
+	if err != nil || data.OpenID == "" {
+		var precheck Preset
+		if err = json.Unmarshal(body, &precheck); err == nil {
+			if precheck.Token == config.GConfig.Feishu.Token {
+				res := map[string]string{
+					"challenge": precheck.Challenge,
+				}
+				jsonData, _ := json.Marshal(res)
+				w.Write(jsonData)
+				return
+			}
+		}
 		logrus.Errorf("Failed to parse JSON: %v", err)
 		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
 		return
@@ -80,9 +89,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	mid := data.OpenMessageID
 	key := data.Action.Value
 
-	//logrus.Info("Received card action:", data.Action.Value)
-	logrus.Info("mid: ", mid)
-	logrus.Info("messageId2Uid[mid].username:", messageId2Uid[mid].username)
+	logrus.Debug("mid: ", mid)
+	logrus.Debug("messageId2Uid[mid].username:", messageId2Uid[mid].username)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if key == "\"reject\"" {
@@ -93,6 +101,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	} else if key == "\"pass\"" {
 		uid := messageId2Uid[mid].Uid
 		ExceptList[uid] = true
+		saveExceptList()
 		//delete(messageId2Uid, mid)
 		w.Write([]byte(GetPassCard(messageId2Uid[mid].username)))
 	}
@@ -101,35 +110,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func Init() {
 	client = lark.NewClient(config.GConfig.Feishu.AppId, config.GConfig.Feishu.AppSecret)
 
+	initExceptList()
 	req := larkcontact.NewBatchGetIdUserReqBuilder().
 		UserIdType(`open_id`).
 		Body(larkcontact.NewBatchGetIdUserReqBodyBuilder().
 			Emails([]string{config.GConfig.Feishu.Email}).
 			Build()).
 		Build()
-	// 发起请求
+	// request
 	resp, err := client.Contact.User.BatchGetId(context.Background(), req)
 
 	messageId2Uid = make(map[string]Pair)
-	ExceptList = make(map[int]bool)
 
 	if err != nil {
 		logrus.Fatalf("Failed to get user info: %v", err)
 	}
-
+	// get user's openid
 	userOpenId = *resp.Data.UserList[0].UserId
 
-	http.HandleFunc("/webhook/card", handler)
+	http.HandleFunc("/", handler)
 
 	go http.ListenAndServe(":9999", nil)
 	if err != nil {
 		logrus.Fatalf("Failed to start webhook server: %v", err)
 	}
 }
-
-/* messageid uid做关联
-
-如果用户拉黑，就拉黑对应uid
-
-如果用户取消拉黑，就删除这对关联，并将对应uid加入例外列表
-*/

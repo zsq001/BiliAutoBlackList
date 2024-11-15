@@ -2,7 +2,17 @@ cookie: "your_cookie_here"
 targetUID: "your_uid_here"
 timeDelay: 10
 cron: "0 0 0/12 * * *"
+mode: "gpt"
 BlackListWord:
   - "word1"
   - "word2"
   - "word3"
+feishu:
+  appId: "your_app_id_here"
+  appSecret: "your_app_secret_here"
+  email: "your_email_here"
+  token: "your_token_here"
+openaiConfig:
+  apiBase: "URL_ADDRESS"
+  apiKey: "your_api_key_here"
+fansCheckPerDay: 10
