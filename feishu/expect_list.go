@@ -62,6 +62,10 @@ func saveExceptList() {
 	}
 }
 
+func SaveExceptList() {
+	saveExceptList()
+}
+
 func IsInExceptList(uid int) bool {
 	return ExceptList[uid]
 }

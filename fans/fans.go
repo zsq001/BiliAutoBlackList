@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -68,13 +69,23 @@ func GetFansAndCheck(page int) {
 			if config.GConfig.Mode == "basic" && lib.IsInBlackList(v.Uname) {
 				logrus.Info("[basic] add user: ", v.Uname)
 				lib.AddBlackList(v.Mid)
+				continue
 			} else if config.GConfig.Mode == "gpt" && gpt.JudgeResult(v.Uname, v.Sign) {
 				logrus.Info("[gpt] push user: ", v.Uname)
 				feishu.SendQueryCard(v.Uname, v.Sign, v.Mid)
+				continue
 			} else if config.GConfig.Mode == "gpt-only" && gpt.JudgeResult(v.Uname, v.Sign) {
 				logrus.Info("[gpt-only] add user: ", v.Uname)
 				lib.AddBlackList(v.Mid)
+				continue
 			}
+
+			//save tokens, the whitelist can be shared between multiple accounts
+			if strings.Contains(config.GConfig.Mode, "gpt") {
+				feishu.ExceptList[v.Mid] = true
+				feishu.SaveExceptList()
+			}
+
 		}
 	}
 	if page <= config.GConfig.FansCheckPerDay/pageSize {
